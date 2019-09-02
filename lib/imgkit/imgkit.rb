@@ -123,7 +123,9 @@ class IMGKit
               still_open.delete_if {|s| s==err}
             end
           end
-          Rails.logger.info("fhs length = #{fhs.compact.length}")
+          fhs.compact.each_with_index do |t,ti|
+            puts "fhs[#{ti}] = #{t}"
+          end
         end
      
       }
