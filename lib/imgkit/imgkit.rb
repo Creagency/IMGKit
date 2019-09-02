@@ -124,7 +124,7 @@ class IMGKit
             end
           end
           fhs.compact.each_with_index do |t,ti|
-            puts "fhs[#{ti}] = #{t}"
+            Rails.logger.info("fhs[#{ti}] = #{t}")
           end
         end
      
