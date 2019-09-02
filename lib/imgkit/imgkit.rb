@@ -74,11 +74,11 @@ class IMGKit
     end
   end
 
-  if Open3.respond_to? :capture3
-    def capture3(*opts)
-      Open3.capture3 *opts
-    end
-  else
+  #if Open3.respond_to? :capture3
+  #  def capture3(*opts)
+  #    Open3.capture3(*opts)
+  #  end
+  #else
     # Lifted from ruby 1.9.2-p290 sources for ruby 1.8 compatibility
     # and modified to work on 1.8
     def capture3(*cmd, &block)
@@ -90,21 +90,35 @@ class IMGKit
 
       stdin_data = opts.delete(:stdin_data) || ''
       binmode = opts.delete(:binmode)
-
+      
       Open3.popen3(*cmd) {|i, o, e|
         if binmode
           i.binmode
           o.binmode
           e.binmode
         end
-        out_reader = Thread.new { o.read }
+        
+        
         err_reader = Thread.new { e.read }
+        out_reader = Thread.new { o.read }
+        
         i.write stdin_data
         i.close
+        still_open = [err_reader, out_reader]
+        while not still_open.empty?
+          err_reader.join(0.05) unless err_reader.status == false
+          if err_reader.status == false
+            still_open.delete_if {|s| s==err_reader}
+          end
+          out_reader.join(0.05) unless out_reader.status == false
+          if out_reader.status == false
+            still_open.delete_if {|s| s==out_reader}
+          end
+        end
         [out_reader.value, err_reader.value]
       }
     end
-  end
+  #end
 
   def to_img(format = nil, path = nil)
     begin
@@ -122,7 +136,7 @@ class IMGKit
       Rails.logger.info("result length: #{result.length}") unless result.nil?
       Rails.logger.info("status: #{status}")
     rescue => e
-      Rails.logger.error(e.message)
+      Rails.logger.error("IMGKit error: #{e.message}")
     end
     Rails.logger.info("</IMGKit>")
     result
