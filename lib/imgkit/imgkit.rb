@@ -90,38 +90,54 @@ class IMGKit
 
       stdin_data = opts.delete(:stdin_data) || ''
       binmode = opts.delete(:binmode)
-      
-      Open3.popen3(*cmd) {|i, o, e|
+      out_value = ""
+      err_value = ""
+      buf = ""
+      Open3.popen3(*cmd) {|i, out, err|
+        still_open = [out,err]
         if binmode
           i.binmode
-          o.binmode
-          e.binmode
+          out.binmode
+          err.binmode
         end
-        
-        
-        err_reader = Thread.new { e.read }
-        out_reader = Thread.new { o.read }
         
         i.write stdin_data
         i.close
-        still_open = [err_reader, out_reader]
         while not still_open.empty?
-          err_reader.join(0.05) unless err_reader.status == false
-          if err_reader.status == false
-            still_open.delete_if {|s| s==err_reader}
+          Rails.logger.info("still_open contains #{still_open.size}")
+          fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
+          # fhs[0] is an array that contains filehandlers we can read from
+          if fhs[0].include?(out)
+            Rails.logger.info("out is readable")
+            begin
+              out.read_nonblock(2048, buf)
+              out_value << buf unless buf.nil?
+              Rails.logger.info("out length: #{out_value.size}")
+            rescue EOFError  # If we have read everything from the pipe
+              # Remove out from the list of open pipes
+              still_open.delete_if {|s| s==out}
+            end
           end
-          out_reader.join(0.05) unless out_reader.status == false
-          if out_reader.status == false
-            still_open.delete_if {|s| s==out_reader}
+          if fhs[0].include? err
+            Rails.logger.info("err is readable")
+            begin
+              err.read_nonblock(2048, buf)
+              Rails.logger.info("err buffer: #{buf}")
+              err_value << buf unless buf.nil?
+            rescue EOFError  # If we have read everything from the pipe
+              # Remove err from the list of open pipes
+              still_open.delete_if {|s| s==err}
+            end
           end
         end
-        [out_reader.value, err_reader.value]
+     
       }
+      [out_value, err_value]
     end
   #end
 
   def to_img(format = nil, path = nil)
-    begin
+    #begin
       Rails.logger.info("<IMGKit>")
       append_stylesheets
       append_javascripts
@@ -135,9 +151,9 @@ class IMGKit
       Rails.logger.info("result nil?: #{result.nil?}")
       Rails.logger.info("result length: #{result.length}") unless result.nil?
       Rails.logger.info("status: #{status}")
-    rescue => e
-      Rails.logger.error("IMGKit error: #{e.message}")
-    end
+    #rescue => e
+    #  Rails.logger.error("IMGKit error: #{e.message}")
+    #end
     Rails.logger.info("</IMGKit>")
     result
   end
