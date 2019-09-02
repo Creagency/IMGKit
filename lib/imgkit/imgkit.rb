@@ -116,9 +116,12 @@ class IMGKit
       result, stderr, status = capture3(*(command(path) + [opts]))
       result.force_encoding("ASCII-8BIT") if result.respond_to? :force_encoding
       raise CommandFailedError.new(command.join(' '), stderr) if path.nil? and result.size == 0
+      Rails.logger.info("<IMGKit>")
       Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
-      Rails.logger.info("result: #{result}") unless result.nil?
+      Rails.logger.info("result nil?: #{result.nil?}")
+      Rails.logger.info("result length: #{result.length}") unless result.nil?
       Rails.logger.info("status: #{status}")
+      Rails.logger.info("</IMGKit>")
     rescue => e
       Rails.logger.error(e.message)
     end
