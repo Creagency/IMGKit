@@ -106,6 +106,7 @@ class IMGKit
         while not still_open.empty?
           Rails.logger.info("still_open contains #{still_open.size}")
           fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
+          Rails.logger.info("fhs contains #{fhs.size}")
           # fhs[0] is an array that contains filehandlers we can read from
           if fhs[0].include?(out)
             begin
