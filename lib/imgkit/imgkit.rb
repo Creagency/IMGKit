@@ -106,26 +106,21 @@ class IMGKit
         while not still_open.empty?
           Rails.logger.info("still_open contains #{still_open.size}")
           fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
+          Rails.logger.info("fhs length = #{fhs.length}")
           # fhs[0] is an array that contains filehandlers we can read from
           if fhs[0].include?(out)
-            Rails.logger.info("out is readable")
             begin
               out.read_nonblock(2048, buf)
               out_value << buf unless buf.nil?
-              Rails.logger.info("out length: #{out_value.size}")
             rescue EOFError  # If we have read everything from the pipe
-              # Remove out from the list of open pipes
               still_open.delete_if {|s| s==out}
             end
           end
           if fhs[0].include? err
-            Rails.logger.info("err is readable")
             begin
               err.read_nonblock(2048, buf)
-              Rails.logger.info("err buffer: #{buf}")
               err_value << buf unless buf.nil?
             rescue EOFError  # If we have read everything from the pipe
-              # Remove err from the list of open pipes
               still_open.delete_if {|s| s==err}
             end
           end
@@ -138,7 +133,7 @@ class IMGKit
 
   def to_img(format = nil, path = nil)
     #begin
-      Rails.logger.info("<IMGKit>")
+ #     Rails.logger.info("<IMGKit>")
       append_stylesheets
       append_javascripts
       set_format(format)
@@ -147,14 +142,14 @@ class IMGKit
       result, stderr, status = capture3(*(command(path) + [opts]))
       result.force_encoding("ASCII-8BIT") if result.respond_to? :force_encoding
       raise CommandFailedError.new(command.join(' '), stderr) if path.nil? and result.size == 0
-      Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
-      Rails.logger.info("result nil?: #{result.nil?}")
-      Rails.logger.info("result length: #{result.length}") unless result.nil?
-      Rails.logger.info("status: #{status}")
+ #     Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
+ #     Rails.logger.info("result nil?: #{result.nil?}")
+ #     Rails.logger.info("result length: #{result.length}") unless result.nil?
+ #     Rails.logger.info("status: #{status}")
     #rescue => e
     #  Rails.logger.error("IMGKit error: #{e.message}")
     #end
-    Rails.logger.info("</IMGKit>")
+#    Rails.logger.info("</IMGKit>")
     result
   end
 
