@@ -108,8 +108,9 @@ class IMGKit
             #Rails.logger.info("still_open contains #{still_open.size}")
             fhs = select(still_open,nil,nil,2) # wait for data available in the pipes
             if fhs.nil?
-              Rails.logger.info("=========> IO.Select timed out before threads ready: out: [closed?=#{out.closed?} pid={out.pid} eof?=#{out.eof?}] err: [closed?=#{err.closed?} pid=#{err.pid} eof?=#{err.eof?}]")
-              
+              Rails.logger.info("=========> IO.Select timed out before threads ready: out: [closed?=#{out.closed?} eof?=#{out.eof?}] err: [closed?=#{err.closed?} eof?=#{err.eof?}]")
+              out.close if out.eof?
+              err.close if err.eof?
             else
             #Rails.logger.info("fhs contains #{fhs.size}")
             # fhs[0] is an array that contains filehandlers we can read from
@@ -118,6 +119,8 @@ class IMGKit
                   out.read_nonblock(2048, buf) 
                   out_value << buf unless buf.nil?
                 rescue EOFError  # If we have read everything from the pipe
+                  out.close
+                  Rails.logger.info("Closed OUT")
                   still_open.delete_if {|s| s==out}
                 rescue => e
                   Rails.logger.error("=========>    OUT block error: #{e}")
@@ -128,6 +131,8 @@ class IMGKit
                   err.read_nonblock(2048, buf)
                   err_value << buf unless buf.nil?
                 rescue EOFError  # If we have read everything from the pipe
+                  err.close
+                  Rails.logger.info("Closed ERR")
                   still_open.delete_if {|s| s==err}
                 rescue => e
                   Rails.logger.error("=========>    ERR block error: #{e}")
