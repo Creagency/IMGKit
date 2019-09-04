@@ -104,16 +104,17 @@ class IMGKit
         i.write stdin_data
         i.close
         while not still_open.empty?
-          Rails.logger.info("still_open contains #{still_open.size}")
+          #Rails.logger.info("still_open contains #{still_open.size}")
           fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
-          Rails.logger.info("fhs contains #{fhs.size}")
+          #Rails.logger.info("fhs contains #{fhs.size}")
           # fhs[0] is an array that contains filehandlers we can read from
           if fhs[0].include?(out)
             begin
-              out.read_nonblock(2048, buf)
+              out.read_nonblock(2048, buf) 
               out_value << buf unless buf.nil?
             rescue EOFError  # If we have read everything from the pipe
               still_open.delete_if {|s| s==out}
+            rescue IO::WaitReadable
             end
           end
           if fhs[0].include? err
@@ -123,9 +124,6 @@ class IMGKit
             rescue EOFError  # If we have read everything from the pipe
               still_open.delete_if {|s| s==err}
             end
-          end
-          fhs.compact.each_with_index do |t,ti|
-            Rails.logger.info("fhs[#{ti}] = #{t}")
           end
         end
      
@@ -142,13 +140,15 @@ class IMGKit
       set_format(format)
   
       opts = @source.html? ? {:stdin_data => @source.to_s} : {}
+      Rails.logger.info((command(path) + [opts]).join(" "))
       result, stderr, status = capture3(*(command(path) + [opts]))
       result.force_encoding("ASCII-8BIT") if result.respond_to? :force_encoding
-      raise CommandFailedError.new(command.join(' '), stderr) if path.nil? and result.size == 0
- #     Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
+      Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
  #     Rails.logger.info("result nil?: #{result.nil?}")
  #     Rails.logger.info("result length: #{result.length}") unless result.nil?
- #     Rails.logger.info("status: #{status}")
+      Rails.logger.info("status: #{status}")
+ 
+      raise CommandFailedError.new(command.join(' '), stderr) if path.nil? and result.size == 0
     #rescue => e
     #  Rails.logger.error("IMGKit error: #{e.message}")
     #end
