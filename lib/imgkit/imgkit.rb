@@ -120,6 +120,7 @@ class IMGKit
                   out.close
                   Rails.logger.info("Closed OUT")
                   still_open.delete_if {|s| s==out}
+                  out = nil
                 rescue => e
                   Rails.logger.error("=========>    OUT block error: #{e}")
                 end
@@ -132,6 +133,7 @@ class IMGKit
                   err.close
                   Rails.logger.info("Closed ERR")
                   still_open.delete_if {|s| s==err}
+                  err = nil
                 rescue => e
                   Rails.logger.error("=========>    ERR block error: #{e}")
                 end
