@@ -105,6 +105,13 @@ class IMGKit
         i.close
         while not still_open.empty?
           #Rails.logger.info("still_open contains #{still_open.size}")
+          still_open.each do |t|
+            begin
+              t.write("\n") if t.waiting?
+            rescue => e
+              Rails.logger.error("Threadder error: #{e}")
+            end
+          end
           fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
           #Rails.logger.info("fhs contains #{fhs.size}")
           # fhs[0] is an array that contains filehandlers we can read from
