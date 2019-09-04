@@ -74,11 +74,11 @@ class IMGKit
     end
   end
 
-  #if Open3.respond_to? :capture3
-  #  def capture3(*opts)
-  #    Open3.capture3(*opts)
-  #  end
-  #else
+  if Open3.respond_to? :capture3
+    def capture3(*opts)
+      Open3.capture3(*opts)
+    end
+  else
     # Lifted from ruby 1.9.2-p290 sources for ruby 1.8 compatibility
     # and modified to work on 1.8
     def capture3(*cmd, &block)
@@ -130,7 +130,7 @@ class IMGKit
       }
       [out_value, err_value]
     end
-  #end
+  end
 
   def to_img(format = nil, path = nil)
     #begin
@@ -144,7 +144,7 @@ class IMGKit
       result, stderr, status = capture3(*(command(path) + [opts]))
       result.force_encoding("ASCII-8BIT") if result.respond_to? :force_encoding
       Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
- #     Rails.logger.info("result nil?: #{result.nil?}")
+      #Rails.logger.info("result nil?: #{result.nil?}")
  #     Rails.logger.info("result length: #{result.length}") unless result.nil?
       Rails.logger.info("status: #{status}")
  
