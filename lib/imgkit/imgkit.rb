@@ -109,8 +109,6 @@ class IMGKit
             fhs = select(still_open,nil,nil,2) # wait for data available in the pipes
             if fhs.nil?
               Rails.logger.info("=========> IO.Select timed out before threads ready: out: [closed?=#{out.closed?} eof?=#{out.eof?}] err: [closed?=#{err.closed?} eof?=#{err.eof?}]")
-              out.close if out.eof?
-              err.close if err.eof?
             else
             #Rails.logger.info("fhs contains #{fhs.size}")
             # fhs[0] is an array that contains filehandlers we can read from
