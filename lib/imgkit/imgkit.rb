@@ -74,11 +74,11 @@ class IMGKit
     end
   end
 
-  if Open3.respond_to? :capture3
-    def capture3(*opts)
-      Open3.capture3(*opts)
-    end
-  else
+  #if Open3.respond_to? :capture3
+  #  def capture3(*opts)
+  #    Open3.capture3(*opts)
+  #  end
+  #else
     # Lifted from ruby 1.9.2-p290 sources for ruby 1.8 compatibility
     # and modified to work on 1.8
     def capture3(*cmd, &block)
@@ -104,39 +104,43 @@ class IMGKit
         i.write stdin_data
         i.close
         while not still_open.empty?
-          #Rails.logger.info("still_open contains #{still_open.size}")
-          still_open.each do |t|
-            begin
-              t.write("\n") if t.waiting?
-            rescue => e
-              Rails.logger.error("Threadder error: #{e}")
+          begin
+            #Rails.logger.info("still_open contains #{still_open.size}")
+            fhs = select(still_open,nil,nil,1) # wait for data available in the pipes
+            if fhs.nil?
+              Rails.logger.info("=========> IO.Select timed out before threads ready")
+            else
+            #Rails.logger.info("fhs contains #{fhs.size}")
+            # fhs[0] is an array that contains filehandlers we can read from
+              if fhs[0].include?(out)
+                begin
+                  out.read_nonblock(2048, buf) 
+                  out_value << buf unless buf.nil?
+                rescue EOFError  # If we have read everything from the pipe
+                  still_open.delete_if {|s| s==out}
+                rescue => e
+                  Rails.logger.error("=========>    OUT block error: #{e}")
+                end
+              end
+              if fhs[0].include? err
+                begin
+                  err.read_nonblock(2048, buf)
+                  err_value << buf unless buf.nil?
+                rescue EOFError  # If we have read everything from the pipe
+                  still_open.delete_if {|s| s==err}
+                rescue => e
+                  Rails.logger.error("=========>    ERR block error: #{e}")
+                end
+              end
             end
-          end
-          fhs = select(still_open,nil,nil,nil) # wait for data available in the pipes
-          #Rails.logger.info("fhs contains #{fhs.size}")
-          # fhs[0] is an array that contains filehandlers we can read from
-          if fhs[0].include?(out)
-            begin
-              out.read_nonblock(2048, buf) 
-              out_value << buf unless buf.nil?
-            rescue EOFError  # If we have read everything from the pipe
-              still_open.delete_if {|s| s==out}
-            rescue IO::WaitReadable
-            end
-          end
-          if fhs[0].include? err
-            begin
-              err.read_nonblock(2048, buf)
-              err_value << buf unless buf.nil?
-            rescue EOFError  # If we have read everything from the pipe
-              still_open.delete_if {|s| s==err}
-            end
+          rescue => e
+            Rails.logger.error("=========>    SELECT block error: #{e}")
           end
         end
      
       }
       [out_value, err_value]
-    end
+    #end
   end
 
   def to_img(format = nil, path = nil)
