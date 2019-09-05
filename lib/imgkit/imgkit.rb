@@ -110,8 +110,12 @@ class IMGKit
             if fhs.nil?
               Rails.logger.info("=========> IO.Select timed out before threads ready: out: [closed?=#{out.closed?} eof?=#{out.eof?}] err: [closed?=#{err.closed?} eof?=#{err.eof?}]")
             else
-            Rails.logger.info("fhs contains #{fhs.size}")
-            # fhs[0] is an array that contains filehandlers we can read from
+              s = "fhs contains #{fhs.size}"
+              fhs.each_with_index do |fh, ij|
+                s = "#{s} [#{ij}:#{fh}]"             
+              end
+              Rails.logger.info()
+              # fhs[0] is an array that contains filehandlers we can read from
               if fhs[0].include?(out)
                 begin
                   out.read_nonblock(2048, buf) 
@@ -119,7 +123,7 @@ class IMGKit
                 rescue EOFError  # If we have read everything from the pipe
                   out.close
                   Rails.logger.info("Closed OUT")
-                  still_open.delete_if {|s| s==out}
+                  still_open.delete_if {|so| so==out}
                   out = nil
                 rescue => e
                   Rails.logger.error("=========>    OUT block error: #{e}")
@@ -132,7 +136,7 @@ class IMGKit
                 rescue EOFError  # If we have read everything from the pipe
                   err.close
                   Rails.logger.info("Closed ERR")
-                  still_open.delete_if {|s| s==err}
+                  still_open.delete_if {|se| se==err}
                   err = nil
                 rescue => e
                   Rails.logger.error("=========>    ERR block error: #{e}")
