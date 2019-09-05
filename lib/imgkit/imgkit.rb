@@ -114,7 +114,7 @@ class IMGKit
               fhs.each_with_index do |fh, ij|
                 s = "#{s} [#{ij}:#{fh}]"             
               end
-              Rails.logger.info()
+              Rails.logger.info(s)
               # fhs[0] is an array that contains filehandlers we can read from
               if fhs[0].include?(out)
                 begin
