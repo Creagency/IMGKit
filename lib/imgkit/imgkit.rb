@@ -162,9 +162,9 @@ class IMGKit
   
       opts = @source.html? ? {:stdin_data => @source.to_s} : {}
       Rails.logger.info((command(path) + [opts]).join(" "))
-      result, stderr, status = capture3(*(command(path) + [opts]))
+      result, status = Open3.capture2(*(command(path) + [opts]))
       result.force_encoding("ASCII-8BIT") if result.respond_to? :force_encoding
-      Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
+      #Rails.logger.error("stderr: #{stderr}") unless stderr.nil?
       #Rails.logger.info("result nil?: #{result.nil?}")
  #     Rails.logger.info("result length: #{result.length}") unless result.nil?
       Rails.logger.info("status: #{status}")
