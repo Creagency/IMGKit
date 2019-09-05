@@ -105,12 +105,12 @@ class IMGKit
         i.close
         while not still_open.empty?
           begin
-            #Rails.logger.info("still_open contains #{still_open.size}")
-            fhs = select(still_open,nil,nil,2) # wait for data available in the pipes
+            Rails.logger.info("still_open contains #{still_open.size}")
+            fhs = select(still_open,nil,nil,1) # wait for data available in the pipes
             if fhs.nil?
               Rails.logger.info("=========> IO.Select timed out before threads ready: out: [closed?=#{out.closed?} eof?=#{out.eof?}] err: [closed?=#{err.closed?} eof?=#{err.eof?}]")
             else
-            #Rails.logger.info("fhs contains #{fhs.size}")
+            Rails.logger.info("fhs contains #{fhs.size}")
             # fhs[0] is an array that contains filehandlers we can read from
               if fhs[0].include?(out)
                 begin
